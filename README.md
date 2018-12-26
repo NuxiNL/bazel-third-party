@@ -9,7 +9,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
     name = "com_github_nuxinl_bazel_third_party",
-    commit = "<inset commit hash here>",
+    commit = "<insert commit hash here>",
     remote = "https://github.com/NuxiNL/bazel-third-party.git",
 )
 
