@@ -1,0 +1,54 @@
+--- include/yaml-cpp/node/parse.h
++++ include/yaml-cpp/node/parse.h
+@@ -43,7 +43,9 @@
+  * @throws {@link ParserException} if it is malformed.
+  * @throws {@link BadFile} if the file cannot be loaded.
+  */
++#ifndef __CloudABI__
+ YAML_CPP_API Node LoadFile(const std::string& filename);
++#endif
+ 
+ /**
+  * Loads the input string as a list of YAML documents.
+@@ -72,7 +74,9 @@
+  * @throws {@link ParserException} if it is malformed.
+  * @throws {@link BadFile} if the file cannot be loaded.
+  */
++#ifndef __CloudABI__
+ YAML_CPP_API std::vector<Node> LoadAllFromFile(const std::string& filename);
++#endif
+ }  // namespace YAML
+ 
+ #endif  // VALUE_PARSE_H_62B23520_7C8E_11DE_8A39_0800200C9A66
+--- src/parse.cpp
++++ src/parse.cpp
+@@ -29,6 +29,7 @@
+   return builder.Root();
+ }
+ 
++#ifndef __CloudABI__
+ Node LoadFile(const std::string& filename) {
+   std::ifstream fin(filename.c_str());
+   if (!fin) {
+@@ -36,6 +37,7 @@
+   }
+   return Load(fin);
+ }
++#endif
+ 
+ std::vector<Node> LoadAll(const std::string& input) {
+   std::stringstream stream(input);
+@@ -62,6 +64,7 @@
+   return docs;
+ }
+ 
++#ifndef __CloudABI__
+ std::vector<Node> LoadAllFromFile(const std::string& filename) {
+   std::ifstream fin(filename.c_str());
+   if (!fin) {
+@@ -69,4 +72,5 @@
+   }
+   return LoadAll(fin);
+ }
++#endif
+ }  // namespace YAML

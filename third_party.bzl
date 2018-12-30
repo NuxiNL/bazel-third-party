@@ -13,6 +13,7 @@ def third_party_repositories():
     http_archive(
         name = "com_github_jbeder_yaml_cpp",
         build_file = "@com_github_nuxinl_bazel_third_party//:BUILD.yaml_cpp",
+        patches = ["@com_github_nuxinl_bazel_third_party//:patches/com_github_jbeder_yaml_cpp/no-ifstream.diff"],
         sha256 = "e4d8560e163c3d875fd5d9e5542b5fd5bec810febdcba61481fe5fc4e6b1fd05",
         strip_prefix = "yaml-cpp-yaml-cpp-0.6.2",
         urls = ["https://github.com/jbeder/yaml-cpp/archive/yaml-cpp-0.6.2.tar.gz"],
