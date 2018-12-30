@@ -1,0 +1,46 @@
+--- src/google/protobuf/compiler/importer.cc
++++ src/google/protobuf/compiler/importer.cc
+@@ -235,6 +235,7 @@ string SourceTree::GetLastErrorMessage() {
+   return "File not found.";
+ }
+ 
++#ifndef __CloudABI__
+ DiskSourceTree::DiskSourceTree() {}
+ 
+ DiskSourceTree::~DiskSourceTree() {}
+@@ -492,6 +493,7 @@ io::ZeroCopyInputStream* DiskSourceTree::OpenDiskFile(
+     return NULL;
+   }
+ }
++#endif
+ 
+ }  // namespace compiler
+ }  // namespace protobuf
+--- src/google/protobuf/compiler/importer.h
++++ src/google/protobuf/compiler/importer.h
+@@ -56,7 +56,9 @@ namespace compiler {
+ class Importer;
+ class MultiFileErrorCollector;
+ class SourceTree;
++#ifndef __CloudABI__
+ class DiskSourceTree;
++#endif
+ 
+ // TODO(kenton):  Move all SourceTree stuff to a separate file?
+ 
+@@ -228,6 +230,7 @@ class LIBPROTOBUF_EXPORT SourceTree {
+   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(SourceTree);
+ };
+ 
++#ifndef __CloudABI__
+ // An implementation of SourceTree which loads files from locations on disk.
+ // Multiple mappings can be set up to map locations in the DiskSourceTree to
+ // locations in the physical filesystem.
+@@ -319,6 +322,7 @@ class LIBPROTOBUF_EXPORT DiskSourceTree : public SourceTree {
+ 
+   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DiskSourceTree);
+ };
++#endif
+ 
+ }  // namespace compiler
+ }  // namespace protobuf

@@ -17,3 +17,16 @@ def third_party_repositories():
         strip_prefix = "yaml-cpp-yaml-cpp-0.6.2",
         urls = ["https://github.com/jbeder/yaml-cpp/archive/yaml-cpp-0.6.2.tar.gz"],
     )
+
+    http_archive(
+        name = "com_google_protobuf",
+        patches = [
+            "@com_github_nuxinl_bazel_third_party//:patches/com_google_protobuf/endian.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_google_protobuf/no-filesystem-namespace.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_google_protobuf/no-stdout.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_google_protobuf/unsafe-string-functions.diff",
+        ],
+        sha256 = "73fdad358857e120fd0fa19e071a96e15c0f23bb25f85d3f7009abfd4f264a2a",
+        strip_prefix = "protobuf-3.6.1.3",
+        urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.6.1.3.tar.gz"],
+    )
