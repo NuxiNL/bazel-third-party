@@ -34,7 +34,7 @@
 -             : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
 +#ifdef SO_SNDBUF
 +  if (0 != setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
-+                      sizeof(buffer_size_bytes)) {
++                      sizeof(buffer_size_bytes))) {
 +    return GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
 +  }
 +#endif
@@ -48,7 +48,7 @@
 -             : GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
 +#ifdef SO_RCVBUF
 +  if (0 != setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
-+                      sizeof(buffer_size_bytes)) {
++                      sizeof(buffer_size_bytes))) {
 +    return GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
 +  }
 +#endif
