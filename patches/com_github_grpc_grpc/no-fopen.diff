@@ -1,3 +1,62 @@
+--- include/grpc/grpc_security.h
++++ include/grpc/grpc_security.h
+@@ -133,7 +133,9 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
+ /** Creates default credentials to connect to a google gRPC service.
+    WARNING: Do NOT use this credentials to connect to a non-google service as
+    this could result in an oauth2 token leak. */
++#ifndef GPR_CLOUDABI
+ GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(void);
++#endif
+ 
+ /** Callback for getting the SSL roots override from the application.
+    In case of success, *pem_roots_certs must be set to a NULL terminated string
+--- include/grpcpp/security/credentials.h
++++ include/grpcpp/security/credentials.h
+@@ -152,7 +152,9 @@ struct SslCredentialsOptions {
+ /// Using these credentials to connect to any other service may result in this
+ /// service being able to impersonate your client for requests to Google
+ /// services.
++#ifndef GPR_CLOUDABI
+ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
++#endif
+ 
+ /// Builds SSL Credentials given SSL specific options
+ std::shared_ptr<ChannelCredentials> SslCredentials(
+--- src/core/lib/iomgr/load_file.cc
++++ src/core/lib/iomgr/load_file.cc
+@@ -18,6 +18,8 @@
+ 
+ #include <grpc/support/port_platform.h>
+ 
++#ifndef GPR_CLOUDABI
++
+ #include "src/core/lib/iomgr/load_file.h"
+ 
+ #include <errno.h>
+@@ -78,3 +80,5 @@ end:
+   GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
+   return error;
+ }
++
++#endif
+--- src/core/lib/iomgr/load_file.h
++++ src/core/lib/iomgr/load_file.h
+@@ -21,6 +21,8 @@
+ 
+ #include <grpc/support/port_platform.h>
+ 
++#ifndef GPR_CLOUDABI
++
+ #include <stdio.h>
+ 
+ #include <grpc/slice.h>
+@@ -32,4 +34,6 @@
+ grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
+                            grpc_slice* slice);
+ 
++#endif
++
+ #endif /* GRPC_CORE_LIB_IOMGR_LOAD_FILE_H */
 --- src/core/lib/security/credentials/alts/check_gcp_environment.cc
 +++ src/core/lib/security/credentials/alts/check_gcp_environment.cc
 @@ -55,6 +55,10 @@ namespace grpc_core {
@@ -19,3 +78,69 @@
  }
  
  }  // namespace internal
+--- src/core/lib/security/credentials/google_default/google_default_credentials.cc
++++ src/core/lib/security/credentials/google_default/google_default_credentials.cc
+@@ -114,6 +114,7 @@ static grpc_channel_credentials_vtable google_default_credentials_vtable = {
+     google_default_create_security_connector, nullptr};
+ 
+ /* Takes ownership of creds_path if not NULL. */
++#ifndef GPR_CLOUDABI
+ static grpc_error* create_default_creds_from_path(
+     char* creds_path, grpc_call_credentials** creds) {
+   grpc_json* json = nullptr;
+@@ -247,6 +248,7 @@ end:
+   GRPC_ERROR_UNREF(error);
+   return result;
+ }
++#endif
+ 
+ namespace grpc_core {
+ namespace internal {
+--- src/core/lib/security/security_connector/ssl_utils.cc
++++ src/core/lib/security/security_connector/ssl_utils.cc
+@@ -294,6 +294,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
+       gpr_getenv(GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
+   const bool not_use_system_roots = gpr_is_true(not_use_system_roots_env_value);
+   gpr_free(not_use_system_roots_env_value);
++#ifndef GPR_CLOUDABI
+   // First try to load the roots from the environment.
+   char* default_root_certs_path =
+       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
+@@ -302,6 +303,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
+                       grpc_load_file(default_root_certs_path, 1, &result));
+     gpr_free(default_root_certs_path);
+   }
++#endif
+   // Try overridden roots if needed.
+   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+   if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
+@@ -319,12 +321,14 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
+   if (GRPC_SLICE_IS_EMPTY(result) && !not_use_system_roots) {
+     result = LoadSystemRootCerts();
+   }
++#ifndef GPR_CLOUDABI
+   // Fallback to roots manually shipped with gRPC.
+   if (GRPC_SLICE_IS_EMPTY(result) &&
+       ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
+     GRPC_LOG_IF_ERROR("load_file",
+                       grpc_load_file(installed_roots_path, 1, &result));
+   }
++#endif
+   return result;
+ }
+ 
+--- src/cpp/client/secure_credentials.cc
++++ src/cpp/client/secure_credentials.cc
+@@ -82,10 +82,12 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
+ }
+ }  // namespace
+ 
++#ifndef GPR_CLOUDABI
+ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
+   GrpcLibraryCodegen init;  // To call grpc_init().
+   return WrapChannelCredentials(grpc_google_default_credentials_create());
+ }
++#endif
+ 
+ // Builds SSL Credentials given SSL specific options
+ std::shared_ptr<ChannelCredentials> SslCredentials(
