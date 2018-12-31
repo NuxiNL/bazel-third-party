@@ -1,0 +1,32 @@
+--- src/crypto/internal.h
++++ src/crypto/internal.h
+@@ -683,7 +683,7 @@
+     return NULL;
+   }
+ 
+-  return memchr(s, c, n);
++  return (void *)memchr(s, c, n);
+ }
+ 
+ #endif  // __cplusplus
+--- src/crypto/x509v3/v3_utl.c
++++ src/crypto/x509v3/v3_utl.c
+@@ -1109,14 +1109,15 @@
+     ASN1_OCTET_STRING *ret = NULL;
+     unsigned char ipout[32];
+     char *iptmp = NULL, *p;
++    const char *q;
+     int iplen1, iplen2;
+-    p = strchr(ipasc, '/');
+-    if (!p)
++    q = strchr(ipasc, '/');
++    if (!q)
+         return NULL;
+     iptmp = BUF_strdup(ipasc);
+     if (!iptmp)
+         return NULL;
+-    p = iptmp + (p - ipasc);
++    p = iptmp + (q - ipasc);
+     *p++ = 0;
+ 
+     iplen1 = a2i_ipadd(ipout, iptmp);

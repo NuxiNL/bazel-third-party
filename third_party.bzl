@@ -2,6 +2,31 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def third_party_repositories():
     http_archive(
+        name = "boringssl",
+        patches = [
+            "@com_github_nuxinl_bazel_third_party//:patches/boringssl/cloudabi.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/boringssl/const-warning.diff",
+        ],
+        url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
+    )
+
+    http_archive(
+        name = "com_github_cares_cares",
+        build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
+        patches = [
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/const-warning.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/force-sock_funcs.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/no-IN_CLASS.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/no-fopen.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/no-inet_addr.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/sys_select.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/unsafe-string-functions.diff",
+        ],
+        strip_prefix = "c-ares-3be1924221e1326df520f8498d704a5c4c8d0cce",
+        url = "https://github.com/c-ares/c-ares/archive/3be1924221e1326df520f8498d704a5c4c8d0cce.tar.gz",
+    )
+
+    http_archive(
         name = "com_github_open_source_parsers_jsoncpp",
         build_file = "@com_github_nuxinl_bazel_third_party//:BUILD.jsoncpp",
         sha256 =

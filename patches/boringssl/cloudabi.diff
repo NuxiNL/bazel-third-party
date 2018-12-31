@@ -1,0 +1,13 @@
+--- src/include/openssl/base.h
++++ src/include/openssl/base.h
+@@ -130,6 +130,10 @@
+ #define OPENSSL_FUCHSIA
+ #endif
+ 
++#if defined(__CloudABI__)
++#define OPENSSL_TRUSTY
++#endif
++
+ #if defined(TRUSTY)
+ #define OPENSSL_TRUSTY
+ #define OPENSSL_NO_THREADS
