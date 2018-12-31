@@ -1,0 +1,310 @@
+--- src/core/lib/iomgr/iomgr_posix.cc
++++ src/core/lib/iomgr/iomgr_posix.cc
+@@ -32,8 +32,10 @@
+ #include "src/core/lib/iomgr/tcp_server.h"
+ #include "src/core/lib/iomgr/timer.h"
+ 
++#ifndef GPR_CLOUDABI
+ extern grpc_tcp_server_vtable grpc_posix_tcp_server_vtable;
+ extern grpc_tcp_client_vtable grpc_posix_tcp_client_vtable;
++#endif
+ extern grpc_timer_vtable grpc_generic_timer_vtable;
+ extern grpc_pollset_vtable grpc_posix_pollset_vtable;
+ extern grpc_pollset_set_vtable grpc_posix_pollset_set_vtable;
+@@ -55,8 +57,10 @@ static grpc_iomgr_platform_vtable vtable = {
+     iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown};
+ 
+ void grpc_set_default_iomgr_platform() {
++#ifndef GPR_CLOUDABI
+   grpc_set_tcp_client_impl(&grpc_posix_tcp_client_vtable);
+   grpc_set_tcp_server_impl(&grpc_posix_tcp_server_vtable);
++#endif
+   grpc_set_timer_impl(&grpc_generic_timer_vtable);
+   grpc_set_pollset_vtable(&grpc_posix_pollset_vtable);
+   grpc_set_pollset_set_vtable(&grpc_posix_pollset_set_vtable);
+--- src/core/lib/iomgr/socket_utils_common_posix.cc
++++ src/core/lib/iomgr/socket_utils_common_posix.cc
+@@ -110,17 +110,23 @@ grpc_error* grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
+ }
+ 
+ grpc_error* grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
+-  return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
+-                         sizeof(buffer_size_bytes))
+-             ? GRPC_ERROR_NONE
+-             : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
++#ifdef SO_SNDBUF
++  if (0 != setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
++                      sizeof(buffer_size_bytes)) {
++    return GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
++  }
++#endif
++  return GRPC_ERROR_NONE;
+ }
+ 
+ grpc_error* grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
+-  return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
+-                         sizeof(buffer_size_bytes))
+-             ? GRPC_ERROR_NONE
+-             : GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
++#ifdef SO_RCVBUF
++  if (0 != setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
++                      sizeof(buffer_size_bytes)) {
++    return GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
++  }
++#endif
++  return GRPC_ERROR_NONE;
+ }
+ 
+ /* set a socket to close on exec */
+@@ -145,6 +151,7 @@ grpc_error* grpc_set_socket_cloexec(int fd, int close_on_exec) {
+ 
+ /* set a socket to reuse old addresses */
+ grpc_error* grpc_set_socket_reuse_addr(int fd, int reuse) {
++#ifdef SO_REUSEADDR
+   int val = (reuse != 0);
+   int newval;
+   socklen_t intlen = sizeof(newval);
+@@ -157,6 +164,7 @@ grpc_error* grpc_set_socket_reuse_addr(int fd, int reuse) {
+   if ((newval != 0) != val) {
+     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEADDR");
+   }
++#endif
+ 
+   return GRPC_ERROR_NONE;
+ }
+@@ -188,7 +196,7 @@ static gpr_once g_probe_so_reuesport_once = GPR_ONCE_INIT;
+ static int g_support_so_reuseport = false;
+ 
+ void probe_so_reuseport_once(void) {
+-#ifndef GPR_MANYLINUX1
++#if !defined(GPR_MANYLINUX1) && !defined(GPR_CLOUDABI)
+   int s = socket(AF_INET, SOCK_STREAM, 0);
+   if (s < 0) {
+     /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
+@@ -210,6 +218,7 @@ bool grpc_is_socket_reuse_port_supported() {
+ 
+ /* disable nagle */
+ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
++#ifdef TCP_NODELAY
+   int val = (low_latency != 0);
+   int newval;
+   socklen_t intlen = sizeof(newval);
+@@ -222,6 +231,7 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
+   if ((newval != 0) != val) {
+     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
+   }
++#endif
+   return GRPC_ERROR_NONE;
+ }
+ 
+@@ -329,6 +339,11 @@ grpc_error* grpc_set_socket_with_mutator(int fd, grpc_socket_mutator* mutator) {
+   return GRPC_ERROR_NONE;
+ }
+ 
++#ifdef GPR_CLOUDABI
++int grpc_ipv6_loopback_available(void) {
++  return 1;
++}
++#else
+ static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
+ static int g_ipv6_loopback_available;
+ 
+@@ -356,12 +371,14 @@ int grpc_ipv6_loopback_available(void) {
+   gpr_once_init(&g_probe_ipv6_once, probe_ipv6_once);
+   return g_ipv6_loopback_available;
+ }
++#endif
+ 
+ /* This should be 0 in production, but it may be enabled for testing or
+    debugging purposes, to simulate an environment where IPv6 sockets can't
+    also speak IPv4. */
+ int grpc_forbid_dualstack_sockets_for_testing = 0;
+ 
++#ifndef GPR_CLOUDABI
+ static int set_socket_dualstack(int fd) {
+   if (!grpc_forbid_dualstack_sockets_for_testing) {
+     const int off = 0;
+@@ -432,6 +449,7 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
+   *newfd = create_socket(factory, family, type, protocol);
+   return error_for_fd(*newfd, resolved_addr);
+ }
++#endif
+ 
+ uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
+ 
+--- src/core/lib/iomgr/socket_utils_posix.h
++++ src/core/lib/iomgr/socket_utils_posix.h
+@@ -130,6 +130,7 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
+      IPv4, so that bind() or connect() see the correct family.
+    Also, it's important to distinguish between DUALSTACK and IPV6 when
+    listening on the [::] wildcard address. */
++#ifndef GPR_CLOUDABI
+ grpc_error* grpc_create_dualstack_socket(const grpc_resolved_address* addr,
+                                          int type, int protocol,
+                                          grpc_dualstack_mode* dsmode,
+@@ -140,5 +141,6 @@ grpc_error* grpc_create_dualstack_socket(const grpc_resolved_address* addr,
+ grpc_error* grpc_create_dualstack_socket_using_factory(
+     grpc_socket_factory* factory, const grpc_resolved_address* addr, int type,
+     int protocol, grpc_dualstack_mode* dsmode, int* newfd);
++#endif
+ 
+ #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */
+--- src/core/lib/iomgr/tcp_client_posix.cc
++++ src/core/lib/iomgr/tcp_client_posix.cc
+@@ -133,6 +133,7 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
+   return grpc_tcp_create(fd, channel_args, addr_str);
+ }
+ 
++#ifndef GPR_CLOUDABI
+ static void on_writable(void* acp, grpc_error* error) {
+   async_connect* ac = static_cast<async_connect*>(acp);
+   int so_error = 0;
+@@ -361,3 +362,4 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
+ 
+ grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect};
+ #endif
++#endif
+--- src/core/lib/iomgr/tcp_client_posix.h
++++ src/core/lib/iomgr/tcp_client_posix.h
+@@ -45,6 +45,7 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
+    fdobj: out parameter. The new FD
+    Returns: error, if any. Out parameters are not set on error
+ */
++#ifndef GPR_CLOUDABI
+ grpc_error* grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
+                                        const grpc_resolved_address* addr,
+                                        grpc_resolved_address* mapped_addr,
+@@ -64,5 +65,6 @@ void grpc_tcp_client_create_from_prepared_fd(
+     grpc_pollset_set* interested_parties, grpc_closure* closure, grpc_fd* fdobj,
+     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
+     grpc_millis deadline, grpc_endpoint** ep);
++#endif
+ 
+ #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H */
+--- src/core/lib/iomgr/tcp_server_posix.cc
++++ src/core/lib/iomgr/tcp_server_posix.cc
+@@ -266,6 +266,7 @@ error:
+ }
+ 
+ /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
++#ifndef GPR_CLOUDABI
+ static grpc_error* add_wildcard_addrs_to_server(grpc_tcp_server* s,
+                                                 unsigned port_index,
+                                                 int requested_port,
+@@ -513,6 +514,7 @@ static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
+   }
+   gpr_mu_unlock(&s->mu);
+ }
++#endif
+ 
+ grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
+   gpr_ref_non_zero(&s->refs);
+@@ -551,6 +553,7 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
+   gpr_mu_unlock(&s->mu);
+ }
+ 
++#ifndef GPR_CLOUDABI
+ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
+     tcp_server_create,
+     tcp_server_start,
+@@ -561,4 +564,5 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
+     tcp_server_shutdown_starting_add,
+     tcp_server_unref,
+     tcp_server_shutdown_listeners};
++#endif
+ #endif /* GRPC_POSIX_SOCKET_TCP_SERVER */
+--- src/core/lib/iomgr/tcp_server_utils_posix.h
++++ src/core/lib/iomgr/tcp_server_utils_posix.h
+@@ -96,11 +96,13 @@ struct grpc_tcp_server {
+ 
+ /* If successful, add a listener to \a s for \a addr, set \a dsmode for the
+    socket, and return the \a listener. */
++#ifndef GPR_CLOUDABI
+ grpc_error* grpc_tcp_server_add_addr(grpc_tcp_server* s,
+                                      const grpc_resolved_address* addr,
+                                      unsigned port_index, unsigned fd_index,
+                                      grpc_dualstack_mode* dsmode,
+                                      grpc_tcp_listener** listener);
++#endif
+ 
+ /* Get all addresses assigned to network interfaces on the machine and create a
+    listener for each. requested_port is the port to use for every listener, or 0
+@@ -113,9 +115,11 @@ grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
+                                                 int* out_port);
+ 
+ /* Prepare a recently-created socket for listening. */
++#ifndef GPR_CLOUDABI
+ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server*, int fd,
+                                            const grpc_resolved_address* addr,
+                                            bool so_reuseport, int* port);
++#endif
+ /* Ruturn true if the platform supports ifaddrs */
+ bool grpc_tcp_server_have_ifaddrs(void);
+ 
+--- src/core/lib/iomgr/tcp_server_utils_posix_common.cc
++++ src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+@@ -41,6 +41,7 @@
+ 
+ #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
+ 
++#ifndef GPR_CLOUDABI
+ static gpr_once s_init_max_accept_queue_size = GPR_ONCE_INIT;
+ static int s_max_accept_queue_size;
+ 
+@@ -219,5 +220,6 @@ error:
+   GRPC_ERROR_UNREF(err);
+   return ret;
+ }
++#endif
+ 
+ #endif /* GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON */
+--- src/core/lib/iomgr/udp_server.cc
++++ src/core/lib/iomgr/udp_server.cc
+@@ -345,6 +345,7 @@ void GrpcUdpListener::OnFdAboutToOrphan() {
+   gpr_mu_unlock(&mutex_);
+ }
+ 
++#ifndef GPR_CLOUDABI
+ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
+                        const grpc_resolved_address* addr) {
+   return (socket_factory != nullptr)
+@@ -437,6 +438,7 @@ error:
+   }
+   return -1;
+ }
++#endif
+ 
+ // static
+ void GrpcUdpListener::do_read(void* arg, grpc_error* error) {
+@@ -550,6 +552,7 @@ void GrpcUdpListener::OnCanWrite(grpc_error* error, void* do_write_arg) {
+   GRPC_CLOSURE_SCHED(&do_write_closure_, GRPC_ERROR_NONE);
+ }
+ 
++#ifndef GPR_CLOUDABI
+ static int add_socket_to_server(grpc_udp_server* s, int fd,
+                                 const grpc_resolved_address* addr,
+                                 int rcv_buf_size, int snd_buf_size) {
+@@ -692,6 +695,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
+   gpr_free(allocated_addr);
+   return port;
+ }
++#endif
+ 
+ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {
+   if (port_index >= s->listeners.size()) {
+--- src/core/lib/iomgr/udp_server.h
++++ src/core/lib/iomgr/udp_server.h
+@@ -96,11 +96,13 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index);
+ 
+ /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
+                   all of the multiple socket port matching logic in one place */
++#ifndef GPR_CLOUDABI
+ int grpc_udp_server_add_port(grpc_udp_server* s,
+                              const grpc_resolved_address* addr,
+                              int rcv_buf_size, int snd_buf_size,
+                              GrpcUdpHandlerFactory* handler_factory,
+                              size_t num_listeners);
++#endif
+ 
+ void grpc_udp_server_destroy(grpc_udp_server* server, grpc_closure* on_done);
+ 

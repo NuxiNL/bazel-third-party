@@ -37,6 +37,7 @@ def third_party_repositories():
             "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/netinet_tcp.diff",
             "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-fopen.diff",
             "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-setenv.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-socket-bind-connect.diff",
             "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-socket.diff",
             "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-strcpy.diff",
             "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/platform.diff",

@@ -26,14 +26,13 @@
  #endif
 --- src/core/lib/iomgr/port.h
 +++ src/core/lib/iomgr/port.h
-@@ -168,6 +168,11 @@
+@@ -168,6 +168,10 @@
  #define GRPC_POSIX_SOCKET 1
  #define GRPC_POSIX_SOCKETUTILS 1
  #define GRPC_POSIX_WAKEUP_FD 1
 +#elif defined(GPR_CLOUDABI)
 +#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 +#define GRPC_POSIX_SOCKET 1
-+#define GRPC_POSIX_SOCKETUTILS 1
 +#define GRPC_POSIX_WAKEUP_FD 1
  #elif !defined(GPR_NO_AUTODETECT_PLATFORM)
  #error "Platform not recognized"
