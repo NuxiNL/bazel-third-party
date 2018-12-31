@@ -7,7 +7,7 @@ def third_party_repositories():
             "@com_github_nuxinl_bazel_third_party//:patches/boringssl/cloudabi.diff",
             "@com_github_nuxinl_bazel_third_party//:patches/boringssl/const-warning.diff",
         ],
-        url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
+        urls = ["https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz"],
     )
 
     http_archive(
@@ -23,7 +23,7 @@ def third_party_repositories():
             "@com_github_nuxinl_bazel_third_party//:patches/com_github_cares_cares/unsafe-string-functions.diff",
         ],
         strip_prefix = "c-ares-3be1924221e1326df520f8498d704a5c4c8d0cce",
-        url = "https://github.com/c-ares/c-ares/archive/3be1924221e1326df520f8498d704a5c4c8d0cce.tar.gz",
+        urls = ["https://github.com/c-ares/c-ares/archive/3be1924221e1326df520f8498d704a5c4c8d0cce.tar.gz"],
     )
 
     http_archive(
