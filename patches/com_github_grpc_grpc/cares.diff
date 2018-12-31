@@ -1,0 +1,50 @@
+--- third_party/cares/config_linux/ares_config.h
++++ third_party/cares/config_linux/ares_config.h
+@@ -52,7 +52,9 @@
+ #define HAVE_ARPA_INET_H
+ 
+ /* Define to 1 if you have the <arpa/nameser_compat.h> header file. */
++#ifndef __CloudABI__
+ #define HAVE_ARPA_NAMESER_COMPAT_H
++#endif
+ 
+ /* Define to 1 if you have the <arpa/nameser.h> header file. */
+ #define HAVE_ARPA_NAMESER_H
+@@ -122,13 +124,17 @@
+ #define HAVE_GETHOSTBYNAME
+ 
+ /* Define to 1 if you have the gethostname function. */
++#ifndef __CloudABI__
+ #define HAVE_GETHOSTNAME
++#endif
+ 
+ /* Define to 1 if you have the getnameinfo function. */
+ #define HAVE_GETNAMEINFO
+ 
+ /* Define to 1 if you have the getservbyport_r function. */
++#ifndef __CloudABI__
+ #define HAVE_GETSERVBYPORT_R
++#endif
+ 
+ /* Define to 1 if you have the `gettimeofday' function. */
+ #define HAVE_GETTIMEOFDAY
+@@ -198,7 +204,9 @@
+ #define HAVE_NETINET_IN_H
+ 
+ /* Define to 1 if you have the <netinet/tcp.h> header file. */
++#ifndef __CloudABI__
+ #define HAVE_NETINET_TCP_H
++#endif
+ 
+ /* Define to 1 if you have the <net/if.h> header file. */
+ #define HAVE_NET_IF_H
+@@ -297,7 +305,9 @@
+ #define HAVE_SYS_IOCTL_H
+ 
+ /* Define to 1 if you have the <sys/param.h> header file. */
++#ifndef __CloudABI__
+ #define HAVE_SYS_PARAM_H
++#endif
+ 
+ /* Define to 1 if you have the <sys/select.h> header file. */
+ #define HAVE_SYS_SELECT_H

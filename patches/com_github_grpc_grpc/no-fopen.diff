@@ -1,0 +1,21 @@
+--- src/core/lib/security/credentials/alts/check_gcp_environment.cc
++++ src/core/lib/security/credentials/alts/check_gcp_environment.cc
+@@ -55,6 +55,10 @@ namespace grpc_core {
+ namespace internal {
+ 
+ char* read_bios_file(const char* bios_file) {
++#ifdef GPR_CLOUDABI
++  gpr_log(GPR_ERROR, "BIOS data detection not implemented on CloudABI.");
++  return nullptr;
++#else
+   FILE* fp = fopen(bios_file, "r");
+   if (!fp) {
+     gpr_log(GPR_ERROR, "BIOS data file cannot be opened.");
+@@ -66,6 +70,7 @@ char* read_bios_file(const char* bios_file) {
+   char* trimmed_buf = trim(buf);
+   fclose(fp);
+   return trimmed_buf;
++#endif
+ }
+ 
+ }  // namespace internal

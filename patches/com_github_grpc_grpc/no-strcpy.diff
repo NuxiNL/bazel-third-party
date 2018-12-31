@@ -1,0 +1,31 @@
+--- src/core/lib/gpr/log_posix.cc
++++ src/core/lib/gpr/log_posix.cc
+@@ -63,6 +63,7 @@ void gpr_log(const char* file, int line, gpr_log_severity severity,
+ void gpr_default_log(gpr_log_func_args* args) {
+   const char* final_slash;
+   const char* display_file;
++  const char *time_string;
+   char time_buffer[64];
+   time_t timer;
+   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+@@ -76,15 +77,17 @@ void gpr_default_log(gpr_log_func_args* args) {
+     display_file = final_slash + 1;
+ 
+   if (!localtime_r(&timer, &tm)) {
+-    strcpy(time_buffer, "error:localtime");
++    time_string = "error:localtime";
+   } else if (0 ==
+              strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+-    strcpy(time_buffer, "error:strftime");
++    time_string = "error:strftime";
++  } else {
++    time_string = time_buffer;
+   }
+ 
+   char* prefix;
+   gpr_asprintf(&prefix, "%s%s.%09d %7tu %s:%d]",
+-               gpr_log_severity_string(args->severity), time_buffer,
++               gpr_log_severity_string(args->severity), time_string,
+                (int)(now.tv_nsec), gettid(), display_file, args->line);
+ 
+   fprintf(stderr, "%-70s %s\n", prefix, args->message);

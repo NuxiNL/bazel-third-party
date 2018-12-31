@@ -27,6 +27,27 @@ def third_party_repositories():
     )
 
     http_archive(
+        name = "com_github_grpc_grpc",
+        patches = [
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/cares.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/clock_gettime.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/localtime_r.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/memory.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/msghdr-msg_name.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/netinet_tcp.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-fopen.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-setenv.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-socket.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/no-strcpy.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/platform.diff",
+            "@com_github_nuxinl_bazel_third_party//:patches/com_github_grpc_grpc/strtok_r.diff",
+        ],
+        sha256 = "34ed95b727e7c6fcbf85e5eb422e962788e21707b712fdb4caf931553c2c6dbc",
+        strip_prefix = "grpc-1.17.2",
+        urls = ["https://github.com/grpc/grpc/archive/v1.17.2.tar.gz"],
+    )
+
+    http_archive(
         name = "com_github_open_source_parsers_jsoncpp",
         build_file = "@com_github_nuxinl_bazel_third_party//:BUILD.jsoncpp",
         sha256 =

@@ -1,0 +1,11 @@
+--- src/core/lib/surface/init.cc
++++ src/core/lib/surface/init.cc
+@@ -19,7 +19,7 @@
+ #include <grpc/support/port_platform.h>
+ 
+ #include <limits.h>
+-#include <memory.h>
++#include <string.h>
+ 
+ #include <grpc/fork.h>
+ #include <grpc/grpc.h>

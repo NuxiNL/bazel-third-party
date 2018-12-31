@@ -1,0 +1,18 @@
+--- third_party/address_sorting/address_sorting_posix.c
++++ third_party/address_sorting/address_sorting_posix.c
+@@ -55,6 +55,7 @@ static bool posix_source_addr_factory_get_source_addr(
+     const address_sorting_address* dest_addr,
+     address_sorting_address* source_addr) {
+   bool source_addr_exists = false;
++#ifndef __CloudABI__
+   // Android sets SOCK_CLOEXEC. Don't set this here for portability.
+   int s = socket(((struct sockaddr*)dest_addr)->sa_family, SOCK_DGRAM, 0);
+   if (s != -1) {
+@@ -71,6 +72,7 @@ static bool posix_source_addr_factory_get_source_addr(
+     }
+   }
+   close(s);
++#endif
+   return source_addr_exists;
+ }
+ 

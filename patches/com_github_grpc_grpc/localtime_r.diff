@@ -1,0 +1,12 @@
+--- src/core/lib/gpr/string.cc
++++ src/core/lib/gpr/string.cc
+@@ -59,7 +59,8 @@ typedef struct {
+ char* gpr_format_timespec(gpr_timespec tm) {
+   char time_buffer[35];
+   char ns_buffer[11];  // '.' + 9 digits of precision
+-  struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
++  struct tm tmbuf;
++  struct tm* tm_info = localtime_r((const time_t*)&tm.tv_sec, &tmbuf);
+   strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
+   snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
+   // This loop trims off trailing zeros by inserting a null character that the

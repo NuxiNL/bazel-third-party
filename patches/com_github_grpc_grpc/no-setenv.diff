@@ -1,0 +1,26 @@
+--- src/core/lib/gpr/env.h
++++ src/core/lib/gpr/env.h
+@@ -32,7 +32,9 @@
+ char* gpr_getenv(const char* name);
+ 
+ /* Sets the environment with the specified name to the specified value. */
++#ifndef GPR_CLOUDABI
+ void gpr_setenv(const char* name, const char* value);
++#endif
+ 
+ /* This is a version of gpr_getenv that does not produce any output if it has to
+    use an insecure version of the function. It is ONLY to be used to solve the
+--- src/core/lib/gpr/env_posix.cc
++++ src/core/lib/gpr/env_posix.cc
+@@ -39,9 +39,11 @@ char* gpr_getenv(const char* name) {
+   return result == nullptr ? result : gpr_strdup(result);
+ }
+ 
++#ifndef GPR_CLOUDABI
+ void gpr_setenv(const char* name, const char* value) {
+   int res = setenv(name, value, 1);
+   GPR_ASSERT(res == 0);
+ }
++#endif
+ 
+ #endif /* GPR_POSIX_ENV */

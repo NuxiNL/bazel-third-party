@@ -1,0 +1,27 @@
+--- src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
++++ src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
+@@ -142,7 +142,8 @@ static bool parse_user_agent(grpc_mdelem md) {
+   char *major_version_str = user_agent_str, *minor_version_str;
+   long major_version = 0, minor_version = 0;
+ 
+-  char* head = strtok(user_agent_str, " ");
++  char *lastp;
++  char* head = strtok_r(user_agent_str, " ", &lastp);
+   while (head != nullptr) {
+     if (!grpc_objc_specifier_seen &&
+         0 == strncmp(head, grpc_objc_specifier, grpc_objc_specifier_len)) {
+@@ -154,11 +155,11 @@ static bool parse_user_agent(grpc_mdelem md) {
+       break;
+     }
+ 
+-    head = strtok(nullptr, " ");
++    head = strtok_r(nullptr, " ", &lastp);
+   }
+   if (grpc_objc_specifier_seen) {
+-    major_version_str = strtok(major_version_str, ".");
+-    minor_version_str = strtok(nullptr, ".");
++    major_version_str = strtok_r(major_version_str, ".", &lastp);
++    minor_version_str = strtok_r(nullptr, ".", &lastp);
+     major_version = atol(major_version_str);
+     minor_version = atol(minor_version_str);
+   }
