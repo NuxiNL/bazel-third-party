@@ -8,12 +8,12 @@ workspace by adding the following lines to the `WORKSPACE` file:
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
-    name = "com_github_nuxinl_bazel_third_party",
+    name = "org_cloudabi_bazel_third_party",
     commit = "<insert commit hash here>",
     remote = "https://github.com/NuxiNL/bazel-third-party.git",
 )
 
-load("@com_github_nuxinl_bazel_third_party//:third_party.bzl", "third_party_repositories")
+load("@org_cloudabi_bazel_third_party//:third_party.bzl", "third_party_repositories")
 
 third_party_repositories()
 ```
