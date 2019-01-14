@@ -1,0 +1,78 @@
+--- BUILD.bazel
++++ BUILD.bazel
+@@ -103,13 +103,16 @@ cc_library(
+             "@com_google_absl//absl/types:variant",
+         ],
+         "//conditions:default": [],
+-    }),
++    }) + ["@org_llvm_libcxxabi//:libcxxabi"],
+ )
+ 
+ cc_library(
+     name = "gtest_main",
+     srcs = ["googlemock/src/gmock_main.cc"],
+-    deps = [":gtest"],
++    deps = [
++        ":gtest",
++        "@org_cloudabi_argdata//:argdata",
++    ],
+ )
+ 
+ # The following rules build samples of how to use gTest.
+--- googlemock/src/gmock_main.cc
++++ googlemock/src/gmock_main.cc
+@@ -28,6 +28,48 @@
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ 
++#ifdef __CloudABI__
++
++#include <argdata.h>
++#include <program.h>
++#include <stdio.h>
++#include <cstdlib>
++#include <cstring>
++
++#include "gmock/gmock.h"
++#include "gtest/gtest.h"
++
++void program_main(const argdata_t *ad) {
++  // Default configuration attributes.
++  int logfile = -1;
++
++  // Fetch configuration attributes from argument data.
++  argdata_map_iterator_t it;
++  const argdata_t *key;
++  const argdata_t *value;
++  argdata_map_iterate(ad, &it);
++  while (argdata_map_get(&it, &key, &value)) {
++    // Fetch key and set value depending on key.
++    const char *keystr;
++    if (argdata_get_str_c(key, &keystr) == 0) {
++      if (std::strcmp(keystr, "logfile") == 0) argdata_get_fd(value, &logfile);
++    }
++    argdata_map_next(&it);
++  }
++
++  // Set up stderr.
++  FILE *f = fdopen(logfile, "w");
++  if (f != NULL) fswap(stderr, f);
++
++  // Call into regular initialization.
++  int argc = 0;
++  char *argv = NULL;
++  testing::InitGoogleMock(&argc, &argv);
++  std::exit(RUN_ALL_TESTS());
++}
++
++#else
++
+ #include <iostream>
+ #include "gmock/gmock.h"
+ #include "gtest/gtest.h"
+@@ -69,3 +111,5 @@ GTEST_API_ int main(int argc, char** argv) {
+   return RUN_ALL_TESTS();
+ }
+ #endif
++
++#endif

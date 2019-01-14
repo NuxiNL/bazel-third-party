@@ -1,0 +1,107 @@
+--- googlemock/src/gmock-internal-utils.cc
++++ googlemock/src/gmock-internal-utils.cc
+@@ -43,6 +43,13 @@
+ #include "gmock/internal/gmock-port.h"
+ #include "gtest/gtest.h"
+ 
++#ifdef __CloudABI__
++#define cout cerr
++#define printf(...) fprintf(stderr, __VA_ARGS__)
++#define stdout stderr
++#define vprintf(fmt, ap) fprintf(stderr, fmt, ap)
++#endif
++
+ namespace testing {
+ namespace internal {
+ 
+--- googlemock/src/gmock-spec-builders.cc
++++ googlemock/src/gmock-spec-builders.cc
+@@ -58,6 +58,13 @@
+ #endif
+ #endif
+ 
++#ifdef __CloudABI__
++#define cout cerr
++#define printf(...) fprintf(stderr, __VA_ARGS__)
++#define stdout stderr
++#define vprintf(fmt, ap) fprintf(stderr, fmt, ap)
++#endif
++
+ namespace testing {
+ namespace internal {
+ 
+--- googletest/include/gtest/internal/gtest-port.h
++++ googletest/include/gtest/internal/gtest-port.h
+@@ -590,7 +590,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
+ #ifndef GTEST_HAS_STREAM_REDIRECTION
+ // By default, we assume that stream redirection is supported on all
+ // platforms except known mobile ones.
+-# if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT
++# if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT || defined(__CloudABI__)
+ #  define GTEST_HAS_STREAM_REDIRECTION 0
+ # else
+ #  define GTEST_HAS_STREAM_REDIRECTION 1
+--- googletest/src/gtest-port.cc
++++ googletest/src/gtest-port.cc
+@@ -77,17 +77,26 @@
+ #include "gtest/internal/gtest-string.h"
+ #include "src/gtest-internal-inl.h"
+ 
++#ifdef __CloudABI__
++#define cout cerr
++#define printf(...) fprintf(stderr, __VA_ARGS__)
++#define stdout stderr
++#define vprintf(fmt, ap) fprintf(stderr, fmt, ap)
++#endif
++
+ namespace testing {
+ namespace internal {
+ 
+-#if defined(_MSC_VER) || defined(__BORLANDC__)
++#if GTEST_HAS_STREAM_REDIRECTION
++# if defined(_MSC_VER) || defined(__BORLANDC__)
+ // MSVC and C++Builder do not provide a definition of STDERR_FILENO.
+ const int kStdOutFileno = 1;
+ const int kStdErrFileno = 2;
+-#else
++# else
+ const int kStdOutFileno = STDOUT_FILENO;
+ const int kStdErrFileno = STDERR_FILENO;
+-#endif  // _MSC_VER
++# endif  // _MSC_VER
++#endif
+ 
+ #if GTEST_OS_LINUX
+ 
+--- googletest/src/gtest-test-part.cc
++++ googletest/src/gtest-test-part.cc
+@@ -33,6 +33,13 @@
+ #include "gtest/gtest-test-part.h"
+ #include "src/gtest-internal-inl.h"
+ 
++#ifdef __CloudABI__
++#define cout cerr
++#define printf(...) fprintf(stderr, __VA_ARGS__)
++#define stdout stderr
++#define vprintf(fmt, ap) fprintf(stderr, fmt, ap)
++#endif
++
+ namespace testing {
+ 
+ using internal::GetUnitTestImpl;
+--- googletest/src/gtest.cc
++++ googletest/src/gtest.cc
+@@ -138,6 +138,13 @@
+ #include "absl/strings/str_cat.h"
+ #endif  // GTEST_HAS_ABSL
+ 
++#ifdef __CloudABI__
++#define cout cerr
++#define printf(...) fprintf(stderr, __VA_ARGS__)
++#define stdout stderr
++#define vprintf(fmt, ap) fprintf(stderr, fmt, ap)
++#endif
++
+ namespace testing {
+ 
+ using internal::CountIf;

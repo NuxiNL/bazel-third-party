@@ -1,0 +1,144 @@
+--- googletest/include/gtest/internal/gtest-port.h
++++ googletest/include/gtest/internal/gtest-port.h
+@@ -2081,6 +2081,20 @@ inline bool IsDir(const StatStruct& st) {
+ }
+ # endif  // GTEST_OS_WINDOWS_MOBILE
+ 
++#elif defined(__CloudABI__)
++
++typedef struct stat StatStruct;
++
++inline int FileNo(FILE* file) { return fileno(file); }
++inline int IsATTY(int fd) { return 0; }
++inline int Stat(const char* path, StatStruct* buf) { return -1; }
++inline int StrCaseCmp(const char* s1, const char* s2) {
++  return strcasecmp(s1, s2);
++}
++inline char* StrDup(const char* src) { return strdup(src); }
++inline int RmDir(const char* dir) { return -1; }
++inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
++
+ #else
+ 
+ typedef struct stat StatStruct;
+@@ -2109,6 +2123,7 @@ inline const char* StrNCpy(char* dest, const char* src, size_t n) {
+ // StrError() aren't needed on Windows CE at this time and thus not
+ // defined there.
+ 
++#ifndef __CloudABI__
+ #if !GTEST_OS_WINDOWS_MOBILE && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT
+ inline int ChDir(const char* dir) { return chdir(dir); }
+ #endif
+@@ -2119,6 +2134,7 @@ inline FILE* FOpen(const char* path, const char* mode) {
+ inline FILE *FReopen(const char* path, const char* mode, FILE* stream) {
+   return freopen(path, mode, stream);
+ }
++#endif
+ inline FILE* FDOpen(int fd, const char* mode) { return fdopen(fd, mode); }
+ #endif
+ inline int FClose(FILE* fp) { return fclose(fp); }
+@@ -2252,7 +2268,11 @@ typedef TypeWithSize<8>::Int TimeInMillis;  // Represents time in milliseconds.
+ #endif  // !defined(GTEST_FLAG)
+ 
+ #if !defined(GTEST_USE_OWN_FLAGFILE_FLAG_)
+-# define GTEST_USE_OWN_FLAGFILE_FLAG_ 1
++# ifdef __CloudABI__
++#  define GTEST_USE_OWN_FLAGFILE_FLAG_ 0
++# else
++#  define GTEST_USE_OWN_FLAGFILE_FLAG_ 1
++# endif
+ #endif  // !defined(GTEST_USE_OWN_FLAGFILE_FLAG_)
+ 
+ #if !defined(GTEST_DECLARE_bool_)
+--- googletest/src/gtest-filepath.cc
++++ googletest/src/gtest-filepath.cc
+@@ -92,7 +92,7 @@ static bool IsPathSeparator(char c) {
+ 
+ // Returns the current working directory, or "" if unsuccessful.
+ FilePath FilePath::GetCurrentDir() {
+-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT
++#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT || defined(__CloudABI__)
+   // Windows CE doesn't have a current directory, so we just return
+   // something reasonable.
+   return FilePath(kCurrentDirectoryString);
+@@ -315,6 +315,7 @@ bool FilePath::CreateDirectoriesRecursively() const {
+ // directory for any reason, including if the parent directory does not
+ // exist. Not named "CreateDirectory" because that's a macro on Windows.
+ bool FilePath::CreateFolder() const {
++#ifndef __CloudABI__
+ #if GTEST_OS_WINDOWS_MOBILE
+   FilePath removed_sep(this->RemoveTrailingPathSeparator());
+   LPCWSTR unicode = String::AnsiToUtf16(removed_sep.c_str());
+@@ -329,6 +330,7 @@ bool FilePath::CreateFolder() const {
+   if (result == -1) {
+     return this->DirectoryExists();  // An error is OK if the directory exists.
+   }
++#endif
+   return true;  // No error.
+ }
+ 
+--- googletest/src/gtest.cc
++++ googletest/src/gtest.cc
+@@ -183,6 +183,10 @@ bool g_help_flag = false;
+ 
+ // Utilty function to Open File for Writing
+ static FILE* OpenFileForWriting(const std::string& output_file) {
++#ifdef __CloudABI__
++  GTEST_LOG_(FATAL) << "Cannot open files on CloudABI";
++  return nullptr;
++#else
+   FILE* fileout = nullptr;
+   FilePath output_file_path(output_file);
+   FilePath output_dir(output_file_path.RemoveFileName());
+@@ -194,6 +198,7 @@ static FILE* OpenFileForWriting(const std::string& output_file) {
+     GTEST_LOG_(FATAL) << "Unable to open file \"" << output_file << "\"";
+   }
+   return fileout;
++#endif
+ }
+ 
+ }  // namespace internal
+@@ -4424,6 +4429,7 @@ class ScopedPrematureExitFile {
+   explicit ScopedPrematureExitFile(const char* premature_exit_filepath)
+       : premature_exit_filepath_(premature_exit_filepath ?
+                                  premature_exit_filepath : "") {
++#ifndef __CloudABI__
+     // If a path to the premature-exit file is specified...
+     if (!premature_exit_filepath_.empty()) {
+       // create the file with a single "0" character in it.  I/O
+@@ -4433,9 +4439,11 @@ class ScopedPrematureExitFile {
+       fwrite("0", 1, 1, pfile);
+       fclose(pfile);
+     }
++#endif
+   }
+ 
+   ~ScopedPrematureExitFile() {
++#ifndef __CloudABI__
+     if (!premature_exit_filepath_.empty()) {
+       int retval = remove(premature_exit_filepath_.c_str());
+       if (retval) {
+@@ -4444,6 +4452,7 @@ class ScopedPrematureExitFile {
+                           << retval;
+       }
+     }
++#endif
+   }
+ 
+  private:
+@@ -5297,6 +5306,7 @@ bool UnitTestImpl::RunAllTests() {
+ // function will write over it. If the variable is present, but the file cannot
+ // be created, prints an error and exits.
+ void WriteToShardStatusFileIfNeeded() {
++#ifndef __CloudABI__
+   const char* const test_shard_file = posix::GetEnv(kTestShardStatusFile);
+   if (test_shard_file != nullptr) {
+     FILE* const file = posix::FOpen(test_shard_file, "w");
+@@ -5310,6 +5320,7 @@ void WriteToShardStatusFileIfNeeded() {
+     }
+     fclose(file);
+   }
++#endif
+ }
+ 
+ // Checks whether sharding is enabled by examining the relevant

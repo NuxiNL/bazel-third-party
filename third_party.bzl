@@ -67,6 +67,18 @@ def third_party_repositories():
     )
 
     http_archive(
+        name = "com_google_googletest",
+        patches = [
+            "@org_cloudabi_bazel_third_party//:patches/com_google_googletest/no-fopen.diff",
+            "@org_cloudabi_bazel_third_party//:patches/com_google_googletest/no-stdout.diff",
+            "@org_cloudabi_bazel_third_party//:patches/com_google_googletest/program_main.diff",
+        ],
+        sha256 = "99dddcd1a17c786a06bb9a8da55bfa51f08aa146c877c3643d80a36047c715c7",
+        strip_prefix = "googletest-0599a7b8410dc5cfdb477900b280475ae775d7f9",
+        urls = ["https://github.com/google/googletest/archive/0599a7b8410dc5cfdb477900b280475ae775d7f9.tar.gz"],
+    )
+
+    http_archive(
         name = "com_google_protobuf",
         patches = [
             "@org_cloudabi_bazel_third_party//:patches/com_google_protobuf/endian.diff",
