@@ -51,9 +51,9 @@
 +  }
 +
 +  // Call into regular initialization.
-+  int argc = 0;
-+  char *argv = NULL;
-+  testing::InitGoogleMock(&argc, &argv);
++  int argc = 1;
++  char *argv[] = {const_cast<char *>("test"), nullptr};
++  testing::InitGoogleMock(&argc, argv);
 +  std::exit(RUN_ALL_TESTS());
 +}
 +
